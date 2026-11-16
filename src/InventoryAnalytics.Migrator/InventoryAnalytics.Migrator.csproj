@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>InventoryAnalytics.Migrator</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="dbup-sqlserver" />
+  </ItemGroup>
+
+  <!--
+    The SQL scripts live in /database (outside the project) so they are easy to review.
+    They are copied next to the binary, preserving the folder layout, so DbUp can read them
+    from the file system both locally and inside the container image.
+  -->
+  <ItemGroup>
+    <None Include="..\..\database\migrations\**\*.sql" LinkBase="database\migrations" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\database\programmability\**\*.sql" LinkBase="database\programmability" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\database\seed\**\*.sql" LinkBase="database\seed" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
