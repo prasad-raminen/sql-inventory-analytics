@@ -19,9 +19,11 @@
     </PackageReference>
     <PackageReference Include="NSubstitute" />
     <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\InventoryAnalytics.Api\InventoryAnalytics.Api.csproj" />
     <ProjectReference Include="..\..\src\InventoryAnalytics.Core\InventoryAnalytics.Core.csproj" />
     <ProjectReference Include="..\..\src\InventoryAnalytics.Infrastructure\InventoryAnalytics.Infrastructure.csproj" />
   </ItemGroup>
