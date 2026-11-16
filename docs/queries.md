@@ -5,10 +5,10 @@ which index it is meant to use, and what plan shape we expect from the optimizer
 
 > **Honesty note.** The plan shapes below are the *expected* plans, reasoned from the index
 > definitions and how SQL Server's optimizer treats these constructs. They were not captured
-> from a live server: the scripts in this repository have not yet been executed against
-> SQL Server (see the README's "Validation status"). Once you run the stack with
-> `docker compose up`, confirm them with `SET STATISTICS IO, TIME ON` and the actual execution
-> plan (Ctrl+M in SSMS / Azure Data Studio).
+> from a live server. The `sql-integration` CI job runs the scripts against SQL Server 2022 and
+> checks query *results*, not plans (see the README's "Validation status"). To confirm the plans,
+> run the stack with `docker compose up` and use `SET STATISTICS IO, TIME ON` and the actual
+> execution plan (Ctrl+M in SSMS / Azure Data Studio).
 
 ## Schema at a glance
 

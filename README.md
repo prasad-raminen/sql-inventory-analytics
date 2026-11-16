@@ -36,10 +36,12 @@ and `ProblemDetails` bodies for every error.
   - RFC 7807 `ProblemDetails` for 400, 404, 409 and 500.
   - Liveness and readiness health checks.
   - Fail-fast configuration validation at start-up.
-- **Tests**: 57 xUnit tests.
+- **Tests**: 57 unit tests and 26 SQL Server integration tests (xUnit).
   - Service tests use NSubstitute repository mocks.
   - Mapping tests cover SQL error numbers to domain exceptions.
   - In-memory API pipeline tests use `WebApplicationFactory`.
+  - Integration tests deploy a fresh database with the real DbUp migrator and exercise the
+    procedures, views, TVF and Dapper repositories against SQL Server 2022 in CI.
 
 ## Tech stack
 
@@ -96,7 +98,9 @@ exceptions. The API maps them to HTTP status codes in one place.
 │   ├── InventoryAnalytics.Infrastructure/  # Dapper repositories, connection factory, SQL error mapping
 │   ├── InventoryAnalytics.Api/             # minimal API, ProblemDetails, health checks, Swagger
 │   └── InventoryAnalytics.Migrator/        # DbUp console migrator
-├── tests/InventoryAnalytics.UnitTests/     # services, mapping and in-memory API tests
+├── tests/
+│   ├── InventoryAnalytics.UnitTests/         # services, mapping and in-memory API tests
+│   └── InventoryAnalytics.IntegrationTests/  # real SQL Server: migrator, procedures, views, repositories
 ├── Dockerfile                              # multi-stage, targets: api, migrator
 ├── docker-compose.yml                      # sqlserver -> migrator (--seed) -> api
 └── .github/workflows/ci.yml
@@ -136,22 +140,37 @@ The migrator also accepts `--connection "<conn>"` and `--scripts <dir>`.
 ```bash
 # Top 5 products of 2025 (dates are inclusive, UTC)
 curl "http://localhost:8080/api/reports/top-products?from=2025-01-01&to=2025-12-31&top=5"
+```
 
-# Place an order (201 Created + Location header); product ids come from GET /api/products
+IDs are `IDENTITY` values, so look them up by natural key instead of hard-coding them. The product
+comes from the API (needs `jq`); the API has no customer or warehouse endpoints, so those come
+from `sqlcmd` in the SQL Server container:
+
+```bash
+sql() {
+  docker compose exec -T sqlserver /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa \
+    -P "Your_strong_password123" -d InventoryAnalytics -h -1 -W -Q "SET NOCOUNT ON; $1"
+}
+PRODUCT_ID=$(curl -s http://localhost:8080/api/products | jq '.[] | select(.sku == "AC-TRP-CF") | .productId')
+CUSTOMER_ID=$(sql "SELECT CustomerId FROM dbo.Customers WHERE Email = 'ava.jansen@example.com';")
+WAREHOUSE_ID=$(sql "SELECT WarehouseId FROM dbo.Warehouses WHERE Code = 'AMS01';")
+
+# Place an order (201 Created + Location header)
 curl -i -X POST http://localhost:8080/api/orders -H "Content-Type: application/json" \
-     -d '{"customerId":1,"warehouseId":1,"lines":[{"productId":12,"quantity":2}]}'
+     -d "{\"customerId\":$CUSTOMER_ID,\"warehouseId\":$WAREHOUSE_ID,\"lines\":[{\"productId\":$PRODUCT_ID,\"quantity\":2}]}"
 
 # Order more than is in stock: 409 Conflict with a ProblemDetails body
 curl -i -X POST http://localhost:8080/api/orders -H "Content-Type: application/json" \
-     -d '{"customerId":1,"warehouseId":1,"lines":[{"productId":1,"quantity":999}]}'
+     -d "{\"customerId\":$CUSTOMER_ID,\"warehouseId\":$WAREHOUSE_ID,\"lines\":[{\"productId\":$PRODUCT_ID,\"quantity\":999}]}"
 ```
 
 ### SQL smoke script (manual)
 
 After seeding, [`database/tests/smoke-tests.sql`](database/tests/smoke-tests.sql) asserts
-procedure, view and TVF behaviour and `THROW`s on any mismatch. Keep the `-I` flag: sqlcmd
-defaults to `QUOTED_IDENTIFIER OFF`, and inserts into `dbo.Products` (which has a filtered index)
-fail without it.
+procedure, view and TVF behaviour and `THROW`s on any mismatch. sqlcmd defaults to
+`QUOTED_IDENTIFIER OFF`, which breaks inserts into `dbo.Products` (it has a filtered index). Every
+script now sets `ANSI_NULLS` and `QUOTED_IDENTIFIER` itself, and `-I` is kept as a second
+safeguard.
 
 ```bash
 docker compose exec -T sqlserver /opt/mssql-tools18/bin/sqlcmd -C -I -b -S localhost -U sa \
@@ -164,7 +183,10 @@ docker compose exec -T sqlserver /opt/mssql-tools18/bin/sqlcmd -C -I -b -S local
 dotnet test
 ```
 
-The suite needs no database. All tests run in memory:
+This runs both test projects. The unit tests need no database. The SQL Server integration tests
+need a server and are **skipped** (not failed) when `SQLSERVER_TEST_CONNECTION` is not set.
+
+### Unit tests (`tests/InventoryAnalytics.UnitTests`)
 
 | Area | What is covered |
 |---|---|
@@ -172,21 +194,44 @@ The suite needs no database. All tests run in memory:
 | `Infrastructure/*` | every `THROW` number mapped to the right domain exception; unknown SQL errors are not swallowed; TVP `DataTable` shape |
 | `Api/*` | the real pipeline with substituted repositories: `201` + `Location`, `409` for insufficient stock, `404`/`400` ProblemDetails, malformed input, and a `500` that does not leak exception details |
 
+### SQL Server integration tests (`tests/InventoryAnalytics.IntegrationTests`)
+
+A shared fixture creates a uniquely named database, deploys it with the real `DatabaseMigrator`
+(the same DbUp code the console migrator runs) and the scripts in `/database`, and drops it at the
+end. The tests create their own uniquely named rows and use their own reporting windows, so they do
+not depend on `IDENTITY` values, the seed data or test order.
+
+| Area | What is covered |
+|---|---|
+| `Database/MigrationTests` | every table, view, TVF, procedure and table type is created with `ANSI_NULLS`/`QUOTED_IDENTIFIER` ON; exact seed row counts; re-running the migrator and the seed script changes nothing |
+| `Database/PlaceOrderProcedureTests` | stock decremented and order + merged items written; insufficient stock throws `50010`, leaves stock unchanged and writes nothing (rollback); `50001`–`50004` validation errors |
+| `Database/AnalyticsProcedureTests` | `usp_GetTopProducts` ranking (`RANK` ties, `DENSE_RANK`, `ROW_NUMBER` per category, revenue share, half-open window, category filter, argument errors); `usp_SalesByCategory` root roll-up and Pareto shares |
+| `Database/ViewAndFunctionTests` | `vw_LowStock`, `vw_MonthlySales` (`LAG` growth, cancelled orders excluded), `vw_ProductCatalog`, `fn_GetProductStock` |
+| `Repositories/*` | the production Dapper repositories end to end, including TVP shape, result mapping and SQL error translation |
+
+To run them locally against the Compose SQL Server:
+
+```bash
+docker compose up -d sqlserver
+export SQLSERVER_TEST_CONNECTION="Server=localhost,1433;User Id=sa;Password=Your_strong_password123;TrustServerCertificate=True"
+dotnet test tests/InventoryAnalytics.IntegrationTests
+```
+
 ## Validation status
 
-- **Verified:** the solution builds with .NET 8, and all 57 tests pass (`dotnet test`, 0 failed).
-  I also ran the API against an unreachable database and checked its behaviour:
+- **Run locally:** the solution builds with .NET 8 with no warnings. The 57 unit tests pass
+  (`dotnet test`, 0 failed). The 26 integration tests are reported as skipped because no SQL Server
+  is available on the development machine. I also ran the API against an unreachable database and
+  checked its behaviour:
   - liveness returns 200 and readiness returns 503;
   - validation errors return 400 ProblemDetails;
   - start-up fails fast without a connection string.
-- **Not yet verified:**
-  - **The T-SQL scripts have not been executed against SQL Server.** They were written for
-    SQL Server 2022 and reviewed by hand, but no migration, procedure, view or seed script has been
-    run yet. Neither have the Dapper repositories against a real database.
-  - The Docker images and `docker-compose.yml` have not been built or run locally.
-
-  The first `docker compose up` (followed by the smoke script above) will be the first real
-  execution. Treat it as the remaining validation step.
+- **Run in GitHub Actions:** the `sql-integration` job in [`ci.yml`](.github/workflows/ci.yml)
+  starts a SQL Server 2022 service container, deploys the scripts with the DbUp migrator and runs
+  the integration tests against it. The job fails if any of those tests is skipped. This is where
+  the T-SQL is executed and checked.
+- **Not run:** the Docker images and `docker-compose.yml` have not been built or run locally. CI
+  builds the images but does not start the Compose stack.
 
 ## API endpoints
 
