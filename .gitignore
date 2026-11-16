@@ -1,0 +1,41 @@
+## .NET
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userprefs
+*.rsuser
+.vs/
+.vscode/*
+!.vscode/extensions.json
+*.DotSettings.user
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+*.trx
+artifacts/
+publish/
+
+## Local secrets / environment
+appsettings.Development.json
+appsettings.Local.json
+*.env
+.env
+!.env.example
+secrets.json
+
+## Node (kept for any future front end)
+node_modules/
+dist/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+## OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
