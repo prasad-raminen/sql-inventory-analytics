@@ -149,10 +149,12 @@ curl -i -X POST http://localhost:8080/api/orders -H "Content-Type: application/j
 ### SQL smoke script (manual)
 
 After seeding, [`database/tests/smoke-tests.sql`](database/tests/smoke-tests.sql) asserts
-procedure, view and TVF behaviour and `THROW`s on any mismatch:
+procedure, view and TVF behaviour and `THROW`s on any mismatch. Keep the `-I` flag: sqlcmd
+defaults to `QUOTED_IDENTIFIER OFF`, and inserts into `dbo.Products` (which has a filtered index)
+fail without it.
 
 ```bash
-docker compose exec -T sqlserver /opt/mssql-tools18/bin/sqlcmd -C -b -S localhost -U sa \
+docker compose exec -T sqlserver /opt/mssql-tools18/bin/sqlcmd -C -I -b -S localhost -U sa \
   -P "Your_strong_password123" -d InventoryAnalytics -i /dev/stdin < database/tests/smoke-tests.sql
 ```
 
