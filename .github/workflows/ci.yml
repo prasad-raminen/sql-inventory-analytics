@@ -34,9 +34,10 @@ jobs:
       - name: Build
         run: dotnet build InventoryAnalytics.sln -c Release --no-restore
 
-      - name: Test
+      # The SQL Server integration tests are built above but run in the sql-integration job.
+      - name: Unit tests
         run: >
-          dotnet test InventoryAnalytics.sln -c Release --no-build
+          dotnet test tests/InventoryAnalytics.UnitTests/InventoryAnalytics.UnitTests.csproj -c Release --no-build
           --logger "trx;LogFileName=test-results.trx"
           --collect "XPlat Code Coverage"
           --results-directory ./TestResults
@@ -46,6 +47,61 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
+          path: TestResults/
+
+  sql-integration:
+    name: SQL integration tests (SQL Server 2022)
+    runs-on: ubuntu-latest
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          # Throwaway password for the ephemeral CI container only; it protects nothing.
+          MSSQL_SA_PASSWORD: "CiOnly_Passw0rd_2022"
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'CiOnly_Passw0rd_2022' -Q 'SELECT 1' -b"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      SQLSERVER_TEST_CONNECTION: "Server=localhost,1433;User Id=sa;Password=CiOnly_Passw0rd_2022;TrustServerCertificate=True;Encrypt=True"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore tests/InventoryAnalytics.IntegrationTests/InventoryAnalytics.IntegrationTests.csproj
+
+      - name: Build
+        run: dotnet build tests/InventoryAnalytics.IntegrationTests/InventoryAnalytics.IntegrationTests.csproj -c Release --no-restore
+
+      # Each run deploys fresh, uniquely named databases with the DbUp migrator and drops them afterwards.
+      - name: Integration tests
+        run: >
+          dotnet test tests/InventoryAnalytics.IntegrationTests/InventoryAnalytics.IntegrationTests.csproj -c Release --no-build
+          --logger "trx;LogFileName=sql-integration.trx"
+          --logger "console;verbosity=normal"
+          --results-directory ./TestResults
+
+      # Without a connection string the tests skip instead of failing; here that would hide a broken setup.
+      - name: Fail if any SQL test was skipped
+        run: |
+          if ! grep -q 'notExecuted="0"' TestResults/sql-integration.trx; then
+            echo "::error::Some SQL integration tests were skipped; is SQLSERVER_TEST_CONNECTION set?"
+            exit 1
+          fi
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sql-integration-results
           path: TestResults/
 
   docker-build:
