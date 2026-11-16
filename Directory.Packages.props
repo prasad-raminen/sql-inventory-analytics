@@ -10,6 +10,7 @@
     <PackageVersion Include="dbup-sqlserver" Version="5.0.41" />
     <!-- Core abstractions -->
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
     <!-- API -->
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <!-- Testing -->
