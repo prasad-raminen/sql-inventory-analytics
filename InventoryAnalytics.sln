@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InventoryAnalytics.Core", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InventoryAnalytics.Infrastructure", "src\InventoryAnalytics.Infrastructure\InventoryAnalytics.Infrastructure.csproj", "{A42D6F1E-257B-4289-A74E-9692B2625EB5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InventoryAnalytics.Api", "src\InventoryAnalytics.Api\InventoryAnalytics.Api.csproj", "{174522B3-3EE4-4157-97E1-F98F7535C3C4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,10 +34,15 @@ Global
 		{A42D6F1E-257B-4289-A74E-9692B2625EB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A42D6F1E-257B-4289-A74E-9692B2625EB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A42D6F1E-257B-4289-A74E-9692B2625EB5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{174522B3-3EE4-4157-97E1-F98F7535C3C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{174522B3-3EE4-4157-97E1-F98F7535C3C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{174522B3-3EE4-4157-97E1-F98F7535C3C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{174522B3-3EE4-4157-97E1-F98F7535C3C4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{B823E6AC-47CE-4F0B-AA77-4C2971541C93} = {FA0BD13D-6DFB-4645-8749-85F333BB11D5}
 		{1526785B-96D9-4662-A34D-C8C94DEA2414} = {FA0BD13D-6DFB-4645-8749-85F333BB11D5}
 		{A42D6F1E-257B-4289-A74E-9692B2625EB5} = {FA0BD13D-6DFB-4645-8749-85F333BB11D5}
+		{174522B3-3EE4-4157-97E1-F98F7535C3C4} = {FA0BD13D-6DFB-4645-8749-85F333BB11D5}
 	EndGlobalSection
 EndGlobal
