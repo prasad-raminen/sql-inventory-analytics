@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Integration tests against a REAL SQL Server. The server connection string comes from the
+    SQLSERVER_TEST_CONNECTION environment variable; when it is not set every test is reported as
+    skipped (never failed), so `dotnet test` works on machines without SQL Server.
+    CI runs this project in the "sql-integration" job against SQL Server 2022.
+  -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>InventoryAnalytics.IntegrationTests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="FluentAssertions" />
+  </ItemGroup>
+
+  <!--
+    The Migrator reference brings in the real DbUp deployment code (DatabaseMigrator) and copies the
+    database/*.sql scripts into this project's output folder, so the tests deploy exactly what ships.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\InventoryAnalytics.Migrator\InventoryAnalytics.Migrator.csproj" />
+    <ProjectReference Include="..\..\src\InventoryAnalytics.Infrastructure\InventoryAnalytics.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\InventoryAnalytics.Core\InventoryAnalytics.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="FluentAssertions" />
+  </ItemGroup>
+
+</Project>
