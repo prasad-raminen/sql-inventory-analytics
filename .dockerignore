@@ -1,0 +1,14 @@
+**/bin/
+**/obj/
+**/TestResults/
+**/node_modules/
+.git/
+.github/
+.vs/
+.vscode/
+.idea/
+tests/
+docs/
+*.md
+**/*.user
+**/appsettings.Development.json
