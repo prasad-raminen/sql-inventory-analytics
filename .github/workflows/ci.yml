@@ -90,10 +90,12 @@ jobs:
           --results-directory ./TestResults
 
       # Without a connection string the tests skip instead of failing; here that would hide a broken setup.
+      # Skipped tests appear in the TRX report as outcome="NotExecuted".
       - name: Fail if any SQL test was skipped
         run: |
-          if ! grep -q 'notExecuted="0"' TestResults/sql-integration.trx; then
-            echo "::error::Some SQL integration tests were skipped; is SQLSERVER_TEST_CONNECTION set?"
+          trx=TestResults/sql-integration.trx
+          if [ ! -f "$trx" ] || grep -q 'outcome="NotExecuted"' "$trx"; then
+            echo "::error::SQL integration tests were skipped or did not run; is SQLSERVER_TEST_CONNECTION set?"
             exit 1
           fi
 
