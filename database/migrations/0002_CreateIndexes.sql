@@ -6,6 +6,13 @@
     so we only add ones that turn a scan into a seek for a real access path.
     See docs/queries.md for the plan-level reasoning.
 */
+-- Pinned explicitly so the result never depends on the client's defaults (sqlcmd without -I runs
+-- with QUOTED_IDENTIFIER OFF). Filtered indexes, indexes on computed columns and the modules that
+-- write to those tables all require ANSI_NULLS and QUOTED_IDENTIFIER ON.
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
 
 -- SQL Server does NOT index foreign keys automatically. Without these, every join from
 -- Products to its parents and every DELETE/UPDATE on a parent key scans dbo.Products.

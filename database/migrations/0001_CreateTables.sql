@@ -13,6 +13,13 @@
       * Business rules that never change are enforced in the database with CHECK / UNIQUE constraints,
         so every client (API, ad-hoc scripts, ETL) gets the same guarantees.
 */
+-- Pinned explicitly so the result never depends on the client's defaults (sqlcmd without -I runs
+-- with QUOTED_IDENTIFIER OFF). Filtered indexes, indexes on computed columns and the modules that
+-- write to those tables all require ANSI_NULLS and QUOTED_IDENTIFIER ON.
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
 
 CREATE TABLE dbo.Categories
 (

@@ -9,6 +9,13 @@
     reproducible. Order history is generated set-based from a tally CTE (no loops / cursors)
     for calendar year 2025. Keys are resolved by natural key, never by assuming IDENTITY values.
 */
+-- Pinned explicitly so the result never depends on the client's defaults (sqlcmd without -I runs
+-- with QUOTED_IDENTIFIER OFF). Filtered indexes, indexes on computed columns and the modules that
+-- write to those tables all require ANSI_NULLS and QUOTED_IDENTIFIER ON.
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
 SET NOCOUNT ON;
 
 -- Reference data --------------------------------------------------------------------------

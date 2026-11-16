@@ -4,6 +4,13 @@
     SuggestedReorderQty uses a simple "order up to 2 x ReorderLevel" policy so the buyer
     gets an actionable number, and the supplier columns tell them who to call.
 */
+-- Pinned explicitly so the result never depends on the client's defaults (sqlcmd without -I runs
+-- with QUOTED_IDENTIFIER OFF). Filtered indexes, indexes on computed columns and the modules that
+-- write to those tables all require ANSI_NULLS and QUOTED_IDENTIFIER ON.
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
 CREATE OR ALTER VIEW dbo.vw_LowStock
 AS
 SELECT

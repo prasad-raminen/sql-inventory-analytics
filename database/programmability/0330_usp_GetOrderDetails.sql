@@ -2,6 +2,13 @@
     usp_GetOrderDetails - order header + lines in a single round trip (two result sets).
     The API reads both with Dapper's QueryMultipleAsync. Seeks: PK_Orders, IX_OrderItems_OrderId.
 */
+-- Pinned explicitly so the result never depends on the client's defaults (sqlcmd without -I runs
+-- with QUOTED_IDENTIFIER OFF). Filtered indexes, indexes on computed columns and the modules that
+-- write to those tables all require ANSI_NULLS and QUOTED_IDENTIFIER ON.
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
 CREATE OR ALTER PROCEDURE dbo.usp_GetOrderDetails
     @OrderId INT
 AS

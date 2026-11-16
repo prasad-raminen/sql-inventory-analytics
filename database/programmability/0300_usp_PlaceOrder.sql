@@ -16,6 +16,13 @@
     If fewer rows were decremented than requested, we THROW and the CATCH block rolls the
     whole transaction back, so stock and orders can never disagree.
 */
+-- Pinned explicitly so the result never depends on the client's defaults (sqlcmd without -I runs
+-- with QUOTED_IDENTIFIER OFF). Filtered indexes, indexes on computed columns and the modules that
+-- write to those tables all require ANSI_NULLS and QUOTED_IDENTIFIER ON.
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
 CREATE OR ALTER PROCEDURE dbo.usp_PlaceOrder
     @CustomerId  INT,
     @WarehouseId INT,

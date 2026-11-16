@@ -8,6 +8,13 @@
     Warehouses with no Inventory row are returned with 0 on hand (LEFT JOIN), which is what a
     "where can I ship this from?" screen needs.
 */
+-- Pinned explicitly so the result never depends on the client's defaults (sqlcmd without -I runs
+-- with QUOTED_IDENTIFIER OFF). Filtered indexes, indexes on computed columns and the modules that
+-- write to those tables all require ANSI_NULLS and QUOTED_IDENTIFIER ON.
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
 CREATE OR ALTER FUNCTION dbo.fn_GetProductStock (@ProductId INT)
 RETURNS TABLE
 AS

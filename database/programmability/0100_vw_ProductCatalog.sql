@@ -6,6 +6,13 @@
     correlated to each product, so a query that filters on ProductId only sums that
     product's Inventory rows via a clustered-index seek on PK_Inventory.
 */
+-- Pinned explicitly so the result never depends on the client's defaults (sqlcmd without -I runs
+-- with QUOTED_IDENTIFIER OFF). Filtered indexes, indexes on computed columns and the modules that
+-- write to those tables all require ANSI_NULLS and QUOTED_IDENTIFIER ON.
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
 CREATE OR ALTER VIEW dbo.vw_ProductCatalog
 AS
 SELECT

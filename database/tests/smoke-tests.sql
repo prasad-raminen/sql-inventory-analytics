@@ -8,6 +8,13 @@
     The script creates its own product + inventory rows so assertions never depend on what
     earlier runs (or API calls) did to the seeded stock. It is safe to run repeatedly.
 */
+-- Pinned explicitly so the result never depends on the client's defaults (sqlcmd without -I runs
+-- with QUOTED_IDENTIFIER OFF). Filtered indexes, indexes on computed columns and the modules that
+-- write to those tables all require ANSI_NULLS and QUOTED_IDENTIFIER ON.
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
 SET NOCOUNT ON;
 
 DECLARE @Suffix      VARCHAR(12) = RIGHT(CONVERT(VARCHAR(36), NEWID()), 12);
